@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: oklch(0.99 0.003 70); /* Warm soft off-white */
+    --foreground: oklch(0.20 0.01 240); /* Warm dark charcoal text */
+    
+    --card: oklch(1 0 0); /* Pure White */
+    --card-foreground: oklch(0.20 0.01 240);
+    --card-border: oklch(0.91 0.005 70); /* Soft warm border */
+
+    --primary: oklch(0.55 0.14 245); /* Warm comforting blue */
+    --primary-foreground: oklch(1 0 0);
+
+    --secondary: oklch(0.95 0.005 70); /* Very soft gray-sand tint */
+    --secondary-foreground: oklch(0.35 0.01 240);
+
+    --accent: oklch(0.62 0.14 140); /* Friendly Green for Resolutions */
+    --accent-foreground: oklch(1 0 0);
+
+    --muted: oklch(0.60 0.01 240);
+    --muted-foreground: oklch(0.45 0.01 240);
+
+    --danger: oklch(0.58 0.16 25); /* Comforting red for high priority alert */
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Utilities & Animations */
+@layer utilities {
+  .noise-overlay {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.01) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .grid-pattern {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.015) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+  }
+
+  .glow-border {
+    position: relative;
+  }
+
+  .glow-border::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.02));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
