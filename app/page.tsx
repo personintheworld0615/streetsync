@@ -226,7 +226,7 @@ export default function StreetSyncLanding() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           <div className="lg:col-span-8 space-y-10">
             <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              // Reimagining Civic Infrastructure
+              Reimagining Civic Infrastructure
             </div>
 
             <h1 className="font-display font-bold text-5xl md:text-7xl tracking-tight leading-[0.95] text-[oklch(0.20_0.01_240)]">
@@ -314,7 +314,7 @@ export default function StreetSyncLanding() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 border-b border-neutral-200 pb-8">
             <div className="space-y-4">
               <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-                // System Simulator
+                System Simulator
               </div>
               <h2 className="font-display font-bold text-3xl md:text-4xl tracking-tight">
                 Try the Client Workflows
@@ -475,14 +475,14 @@ export default function StreetSyncLanding() {
                   
                   <div className="space-y-4 pt-2">
                     <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">// 01</span>
+                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">01</span>
                       <div className="space-y-1">
                         <span className="text-xs font-bold uppercase tracking-wider">Speech-to-Text Processing</span>
                         <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Converts verbal reports directly to dispatch text entries.</p>
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">// 02</span>
+                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">02</span>
                       <div className="space-y-1">
                         <span className="text-xs font-bold uppercase tracking-wider">Instant Background Telemetry</span>
                         <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Automatically registers GPS coordinates and time signatures.</p>
@@ -501,14 +501,14 @@ export default function StreetSyncLanding() {
 
                   <div className="space-y-4 pt-2">
                     <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">// 01</span>
+                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">01</span>
                       <div className="space-y-1">
                         <span className="text-xs font-bold uppercase tracking-wider">ADA Accessibility Priority</span>
                         <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Flags blockages on wheelchair ramps or crosswalk signals for immediate city resolution.</p>
                       </div>
                     </div>
                     <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">// 02</span>
+                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">02</span>
                       <div className="space-y-1">
                         <span className="text-xs font-bold uppercase tracking-wider">Visual Verification Capture</span>
                         <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Leverages image analysis classification to expedite ticket routing.</p>
@@ -528,7 +528,7 @@ export default function StreetSyncLanding() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           <div className="lg:col-span-6 space-y-6">
             <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              // Backend Clustering
+              Backend Clustering
             </div>
             <h2 className="font-display font-bold text-3xl md:text-4xl tracking-tight">
               Proximity-Based Deduplication
@@ -538,7 +538,7 @@ export default function StreetSyncLanding() {
             </p>
 
             <div className="p-4 border border-neutral-200 bg-white text-xs font-medium space-y-1">
-              <span className="font-bold text-[oklch(0.55_0.14_245)]">// INTERACTIVE SANDBOX</span>
+              <span className="font-bold text-[oklch(0.55_0.14_245)]">Interactive Sandbox</span>
               <p>Click on the grid to drop a pin. Placing pins close to one another clusters them into a single report, increasing the ticket priority multiplier.</p>
             </div>
           </div>
@@ -611,7 +611,7 @@ export default function StreetSyncLanding() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div className="border border-neutral-200 bg-white p-8 space-y-6">
             <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              // Priority Triage
+              Priority Triage
             </div>
             <h3 className="font-display font-bold text-2xl">
               Urgency & Severity Score Matrix
@@ -650,7 +650,7 @@ export default function StreetSyncLanding() {
           <div className="border border-neutral-200 bg-white p-8 space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-                // Anti-Spam Filtering
+                Anti-Spam Filtering
               </div>
               <h3 className="font-display font-bold text-2xl">
                 Reporter Trust Scores
@@ -695,7 +695,7 @@ export default function StreetSyncLanding() {
         <div className="max-w-7xl mx-auto px-8 space-y-12">
           <div className="space-y-4 max-w-xl">
             <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              // Control Center
+              Control Center
             </div>
             <h2 className="font-display font-bold text-3xl">
               Automated Dispatch Dashboard
@@ -780,7 +780,7 @@ export default function StreetSyncLanding() {
                                 : "text-orange-600"
                             }`}
                           >
-                            // {r.status.toUpperCase()}
+                            {r.status.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -809,7 +809,7 @@ export default function StreetSyncLanding() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           <div className="lg:col-span-8 space-y-8">
             <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              // PRD Outline
+              PRD Outline
             </div>
             <h2 className="font-display font-bold text-3xl">
               MVP Functional Requirements
@@ -852,9 +852,9 @@ export default function StreetSyncLanding() {
               <div>
                 <span className="text-[10px] text-neutral-400 block font-bold uppercase tracking-wider">Authors</span>
                 <div className="space-y-1 mt-2 font-mono font-bold text-neutral-800">
-                  <div>// Aarav Garg</div>
-                  <div>// Krish Sinha</div>
-                  <div>// Rithvik Penmetsa</div>
+                  <div>Aarav Garg</div>
+                  <div>Krish Sinha</div>
+                  <div>Rithvik Penmetsa</div>
                 </div>
               </div>
             </div>
