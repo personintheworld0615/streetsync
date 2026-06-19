@@ -164,8 +164,8 @@ export default function StreetSyncLanding() {
   
   const phoneRotateY = useTransform(heroScroll, [0, 1], [0, -12]);
   const phoneRotateX = useTransform(heroScroll, [0, 1], [0, 8]);
-  const phoneY = useTransform(heroScroll, [0, 1], [0, 600]);
-  const phoneX = useTransform(heroScroll, [0, 1], [0, 250]);
+  const phoneY = useTransform(heroScroll, [0, 1], [0, 60]);
+  const phoneX = useTransform(heroScroll, [0, 1], [0, 550]);
   const phoneOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
 
   const card1X = useTransform(heroScroll, [0, 1], [0, -60]);
