@@ -162,11 +162,16 @@ export default function StreetSyncLanding() {
   const headlineX = useTransform(heroScroll, [0, 1], [0, -80]);
   const headlineOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
   
-  const phoneRotateY = useTransform(heroScroll, [0, 1], [0, -12]);
-  const phoneRotateX = useTransform(heroScroll, [0, 1], [0, 8]);
-  const phoneY = useTransform(heroScroll, [0, 1], [0, 60]);
-  const phoneX = useTransform(heroScroll, [0, 1], [0, 550]);
+  const phoneRotateY = useTransform(heroScroll, [0, 1], [0, -25]);
+  const phoneRotateX = useTransform(heroScroll, [0, 1], [0, 12]);
+  const phoneY = useTransform(heroScroll, [0, 1], [0, 40]);
+  const phoneX = useTransform(heroScroll, [0, 1], [0, 500]);
+  const phoneScale = useTransform(heroScroll, [0, 1], [1, 0.9]);
   const phoneOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
+
+  const bgScale = useTransform(heroScroll, [0, 1], [1, 1.15]);
+  const bgY = useTransform(heroScroll, [0, 1], [0, 80]);
+  const bgOpacity = useTransform(heroScroll, [0, 0.8], [0.75, 0]);
 
   const card1X = useTransform(heroScroll, [0, 1], [0, -60]);
   const card1Y = useTransform(heroScroll, [0, 1], [0, -100]);
@@ -247,8 +252,11 @@ export default function StreetSyncLanding() {
       {/* Hero Section styled exactly like Life Track */}
       <section ref={heroRef} className="relative min-h-[calc(100dvh-88px)] bg-[#F4F7E6] pt-16 pb-20 px-8 md:px-16 flex items-center overflow-hidden">
         
-        {/* Soft green backdrop circle behind mockup */}
-        <div className="absolute right-[-10%] top-[10%] w-[650px] h-[650px] rounded-full bg-[#E6EBD1] opacity-75 blur-3xl -z-10 pointer-events-none" />
+        {/* Soft green backdrop circle behind mockup (Parallax motion) */}
+        <motion.div
+          style={{ scale: bgScale, y: bgY, opacity: bgOpacity }}
+          className="absolute right-[-10%] top-[10%] w-[650px] h-[650px] rounded-full bg-[#E6EBD1] blur-3xl -z-10 pointer-events-none"
+        />
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center w-full">
           
@@ -290,8 +298,8 @@ export default function StreetSyncLanding() {
           {/* Right Phone Mockup (Silver Device, Zero Marketing Badges) */}
           <div className="lg:col-span-5 relative flex justify-center lg:justify-end">
             
-            {/* Magnetic Mockup Element (Slides and fades out on scroll) */}
-            <motion.div style={{ rotateY: phoneRotateY, rotateX: phoneRotateX, y: phoneY, x: phoneX, opacity: phoneOpacity }} className="z-10">
+            {/* Magnetic Mockup Element (Slides, rotates, and fades out on scroll) */}
+            <motion.div style={{ rotateY: phoneRotateY, rotateX: phoneRotateX, y: phoneY, x: phoneX, scale: phoneScale, opacity: phoneOpacity }} className="z-10">
               <Magnet strength={5}>
                 {/* Silver Bezel iPhone container */}
                 <div className="relative w-[320px] h-[650px] bg-[#EAEAEA] rounded-[48px] p-2.5 shadow-2xl border-4 border-[#CCCCCC] overflow-hidden">
