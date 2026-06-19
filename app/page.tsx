@@ -156,12 +156,17 @@ export default function StreetSyncLanding() {
     offset: ["start start", "end start"]
   });
 
+  const { scrollY } = useScroll();
+  const navY = useTransform(scrollY, [200, 450], [0, -110]);
+
   const headlineX = useTransform(heroScroll, [0, 1], [0, -80]);
   const headlineOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
   
   const phoneRotateY = useTransform(heroScroll, [0, 1], [0, -12]);
   const phoneRotateX = useTransform(heroScroll, [0, 1], [0, 8]);
-  const phoneY = useTransform(heroScroll, [0, 1], [0, 60]);
+  const phoneY = useTransform(heroScroll, [0, 1], [0, 600]);
+  const phoneX = useTransform(heroScroll, [0, 1], [0, 250]);
+  const phoneOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
 
   const card1X = useTransform(heroScroll, [0, 1], [0, -60]);
   const card1Y = useTransform(heroScroll, [0, 1], [0, -100]);
@@ -211,8 +216,11 @@ export default function StreetSyncLanding() {
 
   return (
     <div className="min-h-screen bg-[#F4F7E6] text-charcoal selection:bg-brunswick/10 overflow-x-clip">
-      {/* Top Header Navigation */}
-      <nav className="w-full bg-[#F4F7E6] border-b border-zinc-200/30 py-6 px-8 flex items-center justify-between z-50">
+      {/* Top Header Navigation (Sticky + Scroll Exit) */}
+      <motion.nav
+        style={{ y: navY }}
+        className="sticky top-0 w-full bg-[#F4F7E6]/90 backdrop-blur-md border-b border-zinc-200/20 py-6 px-8 flex items-center justify-between z-50 transition-shadow duration-300"
+      >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-brunswick flex items-center justify-center text-white font-serif text-sm font-bold">
             S
@@ -234,7 +242,7 @@ export default function StreetSyncLanding() {
             Try now
           </a>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section styled exactly like Life Track */}
       <section ref={heroRef} className="relative min-h-[calc(100dvh-88px)] bg-[#F4F7E6] pt-16 pb-20 px-8 md:px-16 flex items-center overflow-hidden">
@@ -282,8 +290,8 @@ export default function StreetSyncLanding() {
           {/* Right Phone Mockup (Silver Device, Zero Marketing Badges) */}
           <div className="lg:col-span-5 relative flex justify-center lg:justify-end">
             
-            {/* Magnetic Mockup Element */}
-            <motion.div style={{ rotateY: phoneRotateY, rotateX: phoneRotateX, y: phoneY }} className="z-10">
+            {/* Magnetic Mockup Element (Slides and fades out on scroll) */}
+            <motion.div style={{ rotateY: phoneRotateY, rotateX: phoneRotateX, y: phoneY, x: phoneX, opacity: phoneOpacity }} className="z-10">
               <Magnet strength={5}>
                 {/* Silver Bezel iPhone container */}
                 <div className="relative w-[320px] h-[650px] bg-[#EAEAEA] rounded-[48px] p-2.5 shadow-2xl border-4 border-[#CCCCCC] overflow-hidden">
