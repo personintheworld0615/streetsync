@@ -1,98 +1,58 @@
-# Frontend Quickstart
+# StreetSync — Frictionless Civic Infrastructure Reporting
 
-An **AntiGravity** quickstart for building production-quality frontend projects — no design experience required.
-
-Built on **Next.js 15 (React 19)**, **Tailwind CSS v4**, and **TypeScript**, deployed to **Vercel**.
+StreetSync is a modern, design-forward platform built to bridge the gap between residents and municipal governments by removing the effort barriers of community reporting. It replaces clunky portals and phone queues with hands-free voice transcription, background GPS telemetry, and automatic report deduplication.
 
 ---
 
-## 🚀 Supercharge Your Agent (Recommended)
-To get the most out of this Quickstart, we recommend adding these **Elite MCPs** to your chat client (Claude, Cursor, etc.):
+## ✨ Features
 
-| MCP | Purpose | Setup Link |
-|---|---|---|
-| **Dribbble** | Inspiration & Visual Style Extraction | [Install Dribbble MCP](https://mcp.pipedream.com/app/dribbble) |
-| **Tavily** | Technical Research & Documentation Search | [Install Tavily MCP](https://mcp.pipedream.com/app/tavily) |
-| **21st-dev** | World-Class React Components | (Pre-configured) |
-| **StitchMCP** | Design Systems & Mockups | (Pre-configured) |
-
----
-
-## ⌨️ Impeccable Command Palette
-Use these commands to trigger specific design workflows. Format: `/impeccable [command]`
-
-### 🛠️ Create & Shape
-- **`teach`**: Teach Impeccable who your product is for (Run this first!).
-- **`craft`**: Shape the design, then build it, all in one flow.
-- **`shape`**: Discovery-driven design brief before building.
-
-### 🔍 Evaluate & Audit
-- **`audit`**: Technical quality check (Performance, A11y, Design).
-- **`critique`**: Design review with scoring and persona tests.
-
-### 💅 Refine & Polish
-- **`animate`**: Add purposeful state-based motion.
-- **`overdrive`**: Push limits with shaders, physics, and 60fps motion.
-- **`typeset`**: Fix typography, hierarchy, and consistency.
-- **`layout`**: Fix visual rhythm, spacing, and grids.
-- **`bolder` / `quieter`**: Adjust the visual "volume" of the design.
-- **`delight`**: Add small, memorable personality moments.
-
-### 🏗️ Harden & System
-- **`harden`**: Production-ready pass (edge cases, error states, i18n).
-- **`optimize`**: Fix LCP, bundle size, and rendering performance.
-- **`onboard`**: Design first-run paths and empty states.
-- **`extract`**: Pull components/tokens into your design system.
-- **`document`**: Generate a `DESIGN.md` for team-wide brand consistency.
+- **Voice-Activated Reporting**: Designed for transit passengers and pedestrians to report community issues hands-free.
+- **Background Telemetry**: Instantly captures exact coordinates (`42.3519° N, 71.0645° W`) and visual proof upon report trigger.
+- **Proximity-Based Deduplication**: Groups redundant community reports within a 15-meter geospatial radius into a single master ticket to prevent inbox clutter for municipal admins.
+- **Priority Urgency Routing**: Priority queue algorithm ranks critical issues, placing mobility barriers near transit hubs at maximum urgency.
+- **Interactive Stacking Cards**: A fluid scroll-driven presentation showing backend municipal dispatch intelligence.
+- **Editorial Aesthetics**: Soft warm lime-minty canvas (`#F4F7E6`), crisp luxury serifs (*Cormorant Garamond*), and functional dark-green components.
 
 ---
 
-## 🎛️ Active Controls (The Dials)
-Control the "vibe" by asking me to adjust these dials (1–10):
-- **Design Variance**: (1 = Symmetrical · 10 = Artsy Chaos)
-- **Motion Intensity**: (1 = Static · 10 = Cinematic)
-- **Visual Density**: (1 = Airy · 10 = Packed Dashboard)
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 15 (React 19)
+- **Styling**: Tailwind CSS v4 with custom tokens
+- **Animations**: Framer Motion for magnetic hover effects and scroll-driven stacked interactions
+- **Icons**: Lucide React
+- **Typography**: Cormorant Garamond (display) & System Sans Stack (body)
 
 ---
 
-## 💎 Bundled Skills
-These live in `.agent/skills/` and activate automatically to ensure your site avoids "AI Slop."
+## 🚀 Getting Started
 
-| Skill | Expert Domain |
-|---|---|
-| **`impeccable`** | **Design Director**: Sets brand personality and kills generic defaults. |
-| **`taste`** | **Design Engineer**: Enforces high-end layouts, OKLCH colors, and bento grids. |
-| **`emil-design-eng`** | **Interaction Specialist**: Focuses on micro-animations and "invisible correctness." |
-| **`full-output`** | **Output Guard**: Zero placeholders. 100% complete file deliveries. |
-| **`minimalist-ui`** | **Aesthetic**: Notion/Linear vibes. Warm monochrome and crisp structure. |
-| **`industrial-ui`** | **Aesthetic**: Swiss typography, mechanical language, and sharp contrast. |
-| **`launch-expert`** | **Final Polish**: SEO, Open Graph, Sitemap, and Metadata. |
+### Prerequisites
+Make sure you have Node.js installed on your system.
 
----
-
-## 🎨 Image-First Pipeline
-1.  **Generate**: *"Generate a reference board for a luxury brand."*
-2.  **Analyze**: *"Analyze the 'Concept Spine' of that image."*
-3.  **Code**: *"Implement the section exactly like the reference."*
-
----
-
-## Project Structure
+### Install Dependencies
+```bash
+npm install
 ```
-app/
-  layout.tsx       # fonts, global providers
-  page.tsx         # main page
-  globals.css      # Tailwind + noise overlay
-components/        # extracted leaf components
-.agent/
-  skills/          # bundled skills (auto-loaded)
-AGENT.md           # Core instructions for the agent
+
+### Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the landing page.
+
+### Build for Production
+```bash
+npm run build
 ```
 
 ---
 
-## Pro Tips
-- **Always start with `/impeccable teach`** — it creates a `.impeccable.md` file that guides all future work.
-- **Avoid "AI Purple"** — the `taste` skill automatically bans oversaturated purple/blue gradients.
-- **Use `min-h-[100dvh]`** — never use `h-screen` for heroes (it breaks on mobile). I do this by default.
-- **Ask for a review** — after any build, say "audit what you just built" for senior-level feedback.
+## 👥 Authors & Credits
+
+StreetSync is developed by:
+* **Aarav Garg**
+* **Krish Sinha**
+* **Rithvik Penmetsa**
+
+*Developed as an entry for the 2026 Congressional App Challenge.*
