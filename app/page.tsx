@@ -1,878 +1,689 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence, useScroll, useTransform, MotionValue } from "framer-motion";
 import {
   Mic,
   MapPin,
-  Camera,
-  CheckCircle,
-  Users,
-  Compass,
-  ArrowRight,
   ShieldCheck,
-  FileText,
-  Navigation,
-  Accessibility,
-  Flame,
-  Mail,
   Layers,
-  Activity
+  ArrowUpRight,
+  CheckCircle2,
+  AlertTriangle,
+  Users,
+  Building,
+  Smartphone,
+  Check,
+  ChevronRight,
+  TrendingUp,
+  Inbox,
+  AlertCircle
 } from "lucide-react";
 
-const BASE_LAT = 42.3601;
-const BASE_LNG = -71.0589;
+// ===================== REUSABLE DESIGN ENGINEER COMPONENTS =====================
 
-interface Report {
-  id: string;
-  category: string;
-  desc: string;
-  lat: number;
-  lng: number;
-  time: string;
-  severity: "Low" | "Medium" | "High" | "Critical";
-  trustScore: number;
-  status: "Pending" | "Dispatched" | "Resolved";
-  duplicates: number;
-  ada?: boolean;
-}
-
-export default function StreetSyncLanding() {
-  const [activeMode, setActiveMode] = useState<"voice" | "walking">("voice");
-  const [isRecording, setIsRecording] = useState(false);
-  const [voiceText, setVoiceText] = useState("");
-  const [voiceStep, setVoiceStep] = useState(0);
-
-  const [gridReports, setGridReports] = useState<Report[]>([
-    {
-      id: "1",
-      category: "Roadway Hazard",
-      desc: "Deep pothole middle lane",
-      lat: BASE_LAT + 0.0001,
-      lng: BASE_LNG - 0.0001,
-      time: "2 mins ago",
-      severity: "Medium",
-      trustScore: 88,
-      status: "Pending",
-      duplicates: 0,
-    },
-  ]);
-  const [duplicateMessage, setDuplicateMessage] = useState<string | null>(null);
-
-  const [reporterTrust, setReporterTrust] = useState(75);
-  const [verificationHistory] = useState([
-    { task: "Pothole at Main St", impact: "Confirmed by 4 peers", change: "+5" },
-    { task: "Trash Pile on 3rd Ave", impact: "Resolved & validated", change: "+10" },
-    { task: "Duplicate spam filter check", impact: "Spam submission flag", change: "-15" },
-  ]);
-
-  const [activeFilter, setActiveFilter] = useState<"All" | "Critical" | "Resolved">("All");
-  const [municipalReports, setMunicipalReports] = useState<Report[]>([
-    {
-      id: "101",
-      category: "Accessibility (ADA)",
-      desc: "Blocked wheelchair ramp at train exit",
-      lat: BASE_LAT + 0.0012,
-      lng: BASE_LNG - 0.0008,
-      time: "5m ago",
-      severity: "Critical",
-      trustScore: 95,
-      status: "Dispatched",
-      duplicates: 3,
-      ada: true,
-    },
-    {
-      id: "102",
-      category: "Public Works",
-      desc: "Traffic signal signal blackout main intersection",
-      lat: BASE_LAT - 0.0005,
-      lng: BASE_LNG + 0.0011,
-      time: "12m ago",
-      severity: "High",
-      trustScore: 82,
-      status: "Dispatched",
-      duplicates: 1,
-    },
-    {
-      id: "103",
-      category: "Environmental",
-      desc: "Illegal appliance dump on curbside sidewalk",
-      lat: BASE_LAT + 0.002,
-      lng: BASE_LNG - 0.0015,
-      time: "45m ago",
-      severity: "Medium",
-      trustScore: 90,
-      status: "Pending",
-      duplicates: 0,
-    },
-    {
-      id: "104",
-      category: "Graffiti",
-      desc: "Spray paint on community garden fence",
-      lat: BASE_LAT - 0.0022,
-      lng: BASE_LNG - 0.002,
-      time: "2h ago",
-      severity: "Low",
-      trustScore: 60,
-      status: "Resolved",
-      duplicates: 0,
-    },
-  ]);
+// 1. Magnet Component: Mouse-following magnetic hover effect
+function Magnet({ children, strength = 4, padding = 120 }: { children: React.ReactNode; strength?: number; padding?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isRecording) {
-      setVoiceStep(1);
-      setVoiceText("");
-      const transcriptText = "Deep roadway pothole detected blocking right-hand transit lane near Main crossing.";
-      let index = 0;
-      
-      timer = setInterval(() => {
-        if (index < transcriptText.length) {
-          setVoiceText((prev) => prev + transcriptText.charAt(index));
-          index++;
-        } else {
-          clearInterval(timer);
-          setIsRecording(false);
-          setVoiceStep(2);
-        }
-      }, 50);
-    }
-    return () => clearInterval(timer);
-  }, [isRecording]);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distanceX = e.clientX - centerX;
+      const distanceY = e.clientY - centerY;
+      const distance = Math.hypot(distanceX, distanceY);
 
-  const handleResetVoice = () => {
-    setIsRecording(false);
-    setVoiceText("");
-    setVoiceStep(0);
-  };
+      if (distance < padding) {
+        setIsHovered(true);
+        setPosition({
+          x: distanceX / strength,
+          y: distanceY / strength,
+        });
+      } else {
+        setIsHovered(false);
+        setPosition({ x: 0, y: 0 });
+      }
+    };
 
-  const handleAddGridReport = (offsetLat: number, offsetLng: number) => {
-    const DUP_LIMIT = 0.00015;
-    const duplicate = gridReports.find((r) => {
-      const latDiff = Math.abs(r.lat - (BASE_LAT + offsetLat));
-      const lngDiff = Math.abs(r.lng - (BASE_LNG + offsetLng));
-      return latDiff < DUP_LIMIT && lngDiff < DUP_LIMIT;
-    });
-
-    if (duplicate) {
-      setGridReports(
-        gridReports.map((r) =>
-          r.id === duplicate.id ? { ...r, duplicates: r.duplicates + 1 } : r
-        )
-      );
-      setDuplicateMessage(
-        `Geospatial match: New report within 15m radius clustered into active ID #${duplicate.id}.`
-      );
-      setTimeout(() => setDuplicateMessage(null), 4000);
-    } else {
-      const newReport: Report = {
-        id: (gridReports.length + 1).toString(),
-        category: "Public Works",
-        desc: "New infrastructure issue spotted",
-        lat: BASE_LAT + offsetLat,
-        lng: BASE_LNG + offsetLng,
-        time: "Just now",
-        severity: "Low",
-        trustScore: reporterTrust,
-        status: "Pending",
-        duplicates: 0,
-      };
-      setGridReports([...gridReports, newReport]);
-    }
-  };
-
-  const handleResolveTicket = (id: string) => {
-    setMunicipalReports(
-      municipalReports.map((r) =>
-        r.id === id ? { ...r, status: "Resolved" } : r
-      )
-    );
-  };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [padding, strength]);
 
   return (
-    <div className="min-h-screen text-[oklch(0.20_0.01_240)] bg-[#FAF9F6] font-sans selection:bg-[oklch(0.55_0.14_245)]/10 selection:text-[oklch(0.55_0.14_245)]">
-      {/* Editorial layout thin border lines */}
-      <div className="fixed inset-0 border-x border-neutral-200/50 max-w-7xl mx-auto pointer-events-none z-50" />
+    <div
+      ref={ref}
+      style={{
+        transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+        transition: isHovered ? "transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)" : "transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)",
+        willChange: "transform",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-      {/* Header */}
-      <header className="border-b border-neutral-200 bg-[#FAF9F6] sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Compass className="w-5 h-5 text-[oklch(0.55_0.14_245)] stroke-[2]" />
-            <span className="font-display font-bold text-lg tracking-tight uppercase">
-              StreetSync
-            </span>
-          </div>
+// 2. AnimatedText: Word-by-word scroll-reveal animation
+function AnimatedText({ text }: { text: string }) {
+  const containerRef = useRef<HTMLParagraphElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start 0.85", "end 0.3"],
+  });
 
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-neutral-500">
-              <span>Congressional App Challenge</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-              <span>2026</span>
-            </div>
-            <a
-              href="#prd"
-              className="text-xs font-bold uppercase tracking-wider text-[oklch(0.20_0.01_240)] border-b border-current pb-0.5 hover:text-[oklch(0.55_0.14_245)] transition-colors"
-            >
-              Specs
-            </a>
+  const words = text.split(" ");
+  
+  return (
+    <p ref={containerRef} className="text-base md:text-xl text-muted-pine leading-relaxed max-w-4xl">
+      {words.map((word, wordIndex) => {
+        return (
+          <span key={wordIndex} className="inline-block mr-1.5 relative">
+            <WordProgress word={word} progress={scrollYProgress} index={wordIndex} total={words.length} />
+          </span>
+        );
+      })}
+    </p>
+  );
+}
+
+function WordProgress({ word, progress, index, total }: { word: string; progress: MotionValue<number>; index: number; total: number }) {
+  const start = index / total;
+  const end = (index + 1.5) / total;
+  const opacity = useTransform(progress, [start, end], [0.15, 1]);
+  
+  return <motion.span style={{ opacity }}>{word}</motion.span>;
+}
+
+// 3. Stacking Card Item Component
+function StackingCard({
+  id,
+  title,
+  desc,
+  index,
+  progress,
+  total
+}: {
+  id: string;
+  title: string;
+  desc: string;
+  index: number;
+  progress: MotionValue<number>;
+  total: number;
+}) {
+  const targetScale = 1 - (total - 1 - index) * 0.03;
+  const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
+  
+  return (
+    <motion.div
+      style={{
+        scale,
+        top: `calc(50vh - 160px + ${index * 28}px)`,
+        boxShadow: "0 4px 30px rgba(9, 9, 11, 0.04)"
+      }}
+      className="sticky w-full bg-white border border-whisper-border p-8 md:p-12 rounded-3xl flex flex-col md:flex-row gap-8 items-start md:items-center justify-between mb-[35vh] last:mb-0"
+    >
+      <div className="space-y-4 max-w-xl">
+        <span className="font-serif text-4xl font-light text-brunswick/40 italic block">{id}</span>
+        <h3 className="text-2xl md:text-3xl font-serif font-bold text-charcoal tracking-tight">{title}</h3>
+        <p className="text-muted-pine text-sm md:text-base leading-relaxed">{desc}</p>
+      </div>
+
+      <div className="w-10 h-10 rounded-full bg-mint-highlight flex items-center justify-center text-brunswick shrink-0 self-end md:self-center">
+        <ChevronRight className="w-5 h-5" />
+      </div>
+    </motion.div>
+  );
+}
+
+
+
+// ===================== MAIN LANDING PAGE =====================
+export default function StreetSyncLanding() {
+  const [emailInput, setEmailInput] = useState("");
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formError, setFormError] = useState("");
+  
+
+
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroScroll } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+
+  const headlineX = useTransform(heroScroll, [0, 1], [0, -80]);
+  const headlineOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
+  
+  const phoneRotateY = useTransform(heroScroll, [0, 1], [0, -12]);
+  const phoneRotateX = useTransform(heroScroll, [0, 1], [0, 8]);
+  const phoneY = useTransform(heroScroll, [0, 1], [0, 60]);
+
+  const card1X = useTransform(heroScroll, [0, 1], [0, -60]);
+  const card1Y = useTransform(heroScroll, [0, 1], [0, -100]);
+  const card2X = useTransform(heroScroll, [0, 1], [0, 60]);
+  const card2Y = useTransform(heroScroll, [0, 1], [0, -30]);
+  const card3X = useTransform(heroScroll, [0, 1], [0, -40]);
+  const card3Y = useTransform(heroScroll, [0, 1], [0, 70]);
+
+  const pipelineContainerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: pipelineScroll } = useScroll({
+    target: pipelineContainerRef,
+    offset: ["start start", "end end"]
+  });
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput || !emailInput.includes("@")) {
+      setFormError("Please enter a valid email address.");
+      return;
+    }
+    setFormError("");
+    setFormSubmitted(true);
+  };
+
+  const pipelineSteps = [
+    {
+      id: "01",
+      title: "Proximity-Based Deduplication",
+      desc: "A geospatial radius check groups duplicate reports of the same infrastructure issue (within a 15-meter threshold) into a single master ticket, avoiding redundant municipal responses and inbox clutter."
+    },
+    {
+      id: "02",
+      title: "Severity & Urgency Scoring",
+      desc: "Incoming tickets are prioritized algorithmically based on issue classification, accessibility impact, photo proof presence, and nearby user confirmations. ADA barriers near transit score maximum urgency."
+    },
+    {
+      id: "03",
+      title: "Reporter Trust System",
+      desc: "Reduces spam with lightweight user reliability scoring. Verified submissions from trusted users receive higher prioritization weight, while invalid flags drop lower down the city's queue."
+    },
+    {
+      id: "04",
+      title: "Automated Dispatch & Dashboard",
+      desc: "Integrates standard email report dispatches directly to pilot municipality inboxes, backed by a real-time web dashboard for city administrators to sort, monitor, and resolve outstanding issues."
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#F4F7E6] text-charcoal selection:bg-brunswick/10 overflow-x-clip">
+      {/* Top Header Navigation */}
+      <nav className="w-full bg-[#F4F7E6] border-b border-zinc-200/30 py-6 px-8 flex items-center justify-between z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-brunswick flex items-center justify-center text-white font-serif text-sm font-bold">
+            S
           </div>
+          <span className="font-sans text-lg font-bold tracking-tight text-charcoal">StreetSync</span>
         </div>
-      </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-16 md:pt-28 pb-20 max-w-7xl mx-auto px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-          <div className="lg:col-span-8 space-y-10">
-            <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              Reimagining Civic Infrastructure
-            </div>
+        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-charcoal/80">
+          <a href="#residents" className="hover:text-charcoal transition-custom">Residents</a>
+          <a href="#pipeline" className="hover:text-charcoal transition-custom">Government Pipeline</a>
+          <a href="#impact" className="hover:text-charcoal transition-custom">Case Study</a>
+        </div>
 
-            <h1 className="font-display font-bold text-5xl md:text-7xl tracking-tight leading-[0.95] text-[oklch(0.20_0.01_240)]">
-              Your community, <br />
-              synced in <span className="text-[oklch(0.55_0.14_245)] italic font-light font-serif">one tap.</span>
+        <div>
+          <a
+            href="#pilot"
+            className="inline-flex items-center bg-[#D2D6F2] text-charcoal px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#C2C6E5] transition-custom hover-lift hover-sink"
+          >
+            Try now
+          </a>
+        </div>
+      </nav>
+
+      {/* Hero Section styled exactly like Life Track */}
+      <section ref={heroRef} className="relative min-h-[calc(100dvh-88px)] bg-[#F4F7E6] pt-16 pb-20 px-8 md:px-16 flex items-center overflow-hidden">
+        
+        {/* Soft green backdrop circle behind mockup */}
+        <div className="absolute right-[-10%] top-[10%] w-[650px] h-[650px] rounded-full bg-[#E6EBD1] opacity-75 blur-3xl -z-10 pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center w-full">
+          
+          {/* Left Text */}
+          <motion.div style={{ x: headlineX, opacity: headlineOpacity }} className="lg:col-span-7 flex flex-col justify-center">
+            
+            <h1 className="font-sans text-5xl md:text-[5.25rem] font-bold tracking-tight text-charcoal leading-[1.05] mb-8">
+              Your neighborhood<br />is under control
             </h1>
-
-            <p className="text-lg text-[oklch(0.45_0.01_240)] max-w-[55ch] leading-relaxed font-normal">
-              Traditional municipal reporting keeps residents on hold. By replacing legacy hotline queues and clunky web portals with voice automation and smart geospatial telemetry, StreetSync makes civic action effortless.
+            
+            <p className="text-lg md:text-xl text-charcoal/70 leading-relaxed mb-10 max-w-xl">
+              Report critical infrastructure failures instantly using speech-to-text, background GPS telemetry, and automatic image analysis. Customize reports, stay in control of your neighborhood.
             </p>
 
-            {/* Structured Stats Table (Replaced Pill Cards) */}
-            <div className="border border-neutral-200 bg-white grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 max-w-2xl">
-              <div className="p-6 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Legacy Systems</span>
-                <div className="text-4xl font-display font-bold text-neutral-800">6%</div>
-                <p className="text-xs text-[oklch(0.45_0.01_240)]">Average resident reporting rate in standard municipalities.</p>
-              </div>
-              <div className="p-6 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">StreetSync MVP</span>
-                <div className="text-4xl font-display font-bold text-[oklch(0.55_0.14_245)]">30%</div>
-                <p className="text-xs text-[oklch(0.45_0.01_240)]">Active user engagement benchmarks based on automated reporting trials.</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-6 pt-4">
-              <a
-                href="#demo"
-                className="px-6 py-3.5 bg-[oklch(0.55_0.14_245)] text-white text-xs font-bold tracking-wider uppercase hover:bg-[oklch(0.50_0.14_245)] transition-colors shadow-[4px_4px_0px_0px_#1e293b] active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_#1e293b]"
-              >
-                Launch Simulator
+            {/* Apple & Play Store Badges */}
+            <div className="flex flex-wrap gap-4">
+              <a href="#download" className="bg-black hover:bg-zinc-900 text-white rounded-xl px-5 py-3.5 flex items-center gap-3 transition-custom hover-lift hover-sink">
+                <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
+                  <path d="M18.71,19.5 C17.88,20.74 17,21.95 15.66,21.97 C14.32,22 13.89,21.18 12.37,21.18 C10.84,21.18 10.37,21.95 9.1,22 C7.79,22.05 6.8,20.68 5.96,19.47 C4.25,17 2.94,12.45 4.7,9.39 C5.57,7.87 7.13,6.91 8.82,6.88 C10.1,6.85 11.32,7.75 12.11,7.75 C12.89,7.75 14.37,6.68 15.92,6.84 C16.57,6.87 18.39,7.1 19.56,8.82 C19.47,8.88 17.39,10.1 17.41,12.63 C17.44,15.65 20.06,16.66 20.1,16.67 C20.08,16.74 19.67,18.11 18.71,19.5 M15.97,4.17 C16.63,3.37 17.07,2.28 16.95,1 C16,1.04 14.9,1.6 14.24,2.38 C13.68,3.04 13.19,4.14 13.34,5.39 C14.39,5.47 15.4,4.88 15.97,4.17 Z"/>
+                </svg>
+                <div className="text-left leading-tight">
+                  <p className="text-[8px] uppercase tracking-wider text-zinc-300 font-semibold">Download on the</p>
+                  <p className="text-sm font-bold font-sans">App Store</p>
+                </div>
               </a>
-              <a
-                href="#prd"
-                className="px-6 py-3.5 border border-neutral-200 bg-white text-xs font-bold tracking-wider uppercase hover:bg-neutral-50 transition-colors"
-              >
-                Review Technical PRD
+
+              <a href="#download" className="bg-black hover:bg-zinc-900 text-white rounded-xl px-5 py-3.5 flex items-center gap-3 transition-custom hover-lift hover-sink">
+                <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
+                  <path d="M5,3.06C4.8,3.26 4.67,3.6 4.67,4.06V19.94C4.67,20.4 4.8,20.74 5,20.94L5.07,21L14.6,11.47V11.33L5.07,3L5,3.06M17.81,14.68L15.11,11.98V11.83L17.82,11.13L21,12.95C21.91,13.47 21.91,14.33 21,14.85L17.81,14.68M5.72,21.62L15.11,12.23L17.82,14.94L5.72,21.62M5.72,2.38L17.82,9.06L15.11,11.77L5.72,2.38Z"/>
+                </svg>
+                <div className="text-left leading-tight">
+                  <p className="text-[8px] uppercase tracking-wider text-zinc-300 font-semibold">GET IT ON</p>
+                  <p className="text-sm font-bold font-sans">Google Play</p>
+                </div>
               </a>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Telemetry panel - Editorial/Brutalist look */}
-          <div className="lg:col-span-4 border border-neutral-200 bg-white p-6 space-y-6">
-            <div className="flex justify-between items-center border-b border-neutral-200 pb-4">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[oklch(0.55_0.14_245)]" />
-                <span className="text-xs font-bold uppercase tracking-wider">Telemetry Dispatch</span>
-              </div>
-              <span className="w-2 h-2 rounded-full bg-[oklch(0.62_0.14_140)]" />
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-400 font-bold">Pilot Coordinate Scope</div>
-                <div className="text-xs font-bold font-mono">BOSTON_METRO (42.3601, -71.0589)</div>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-400 font-bold">Active Incidents</div>
-                
-                <div className="p-3 border border-neutral-100 bg-neutral-50 space-y-1">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span>ADA Curb Ramp Blockage</span>
-                    <span className="text-red-600">CRITICAL</span>
-                  </div>
-                  <div className="text-[10px] text-neutral-500">Grouped Dispatch (3x confirmations)</div>
-                </div>
-
-                <div className="p-3 border border-neutral-100 bg-neutral-50 space-y-1">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span>Traffic Signal Blackout</span>
-                    <span className="text-orange-600">HIGH</span>
-                  </div>
-                  <div className="text-[10px] text-neutral-500">Dispatched to District 4 Crew</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Simulator Section */}
-      <section id="demo" className="py-20 bg-white border-y border-neutral-200">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 border-b border-neutral-200 pb-8">
-            <div className="space-y-4">
-              <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-                System Simulator
-              </div>
-              <h2 className="font-display font-bold text-3xl md:text-4xl tracking-tight">
-                Try the Client Workflows
-              </h2>
-            </div>
+          {/* Right Phone Mockup (Silver Device, Zero Marketing Badges) */}
+          <div className="lg:col-span-5 relative flex justify-center lg:justify-end">
             
-            {/* Minimal tab style instead of pill tabs */}
-            <div className="flex border border-neutral-200">
-              <button
-                onClick={() => setActiveMode("voice")}
-                className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-r border-neutral-200 last:border-0 ${
-                  activeMode === "voice"
-                    ? "bg-[oklch(0.55_0.14_245)] text-white"
-                    : "bg-[#FAF9F6] text-neutral-600 hover:text-[oklch(0.20_0.01_240)]"
-                }`}
-              >
-                Voice Capture
-              </button>
-              <button
-                onClick={() => setActiveMode("walking")}
-                className={`px-5 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
-                  activeMode === "walking"
-                    ? "bg-[oklch(0.55_0.14_245)] text-white"
-                    : "bg-[#FAF9F6] text-neutral-600 hover:text-[oklch(0.20_0.01_240)]"
-                }`}
-              >
-                Walking Camera
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-16 items-center">
-            {/* Phone shell redesigned - flat, diagrammatic */}
-            <div className="md:col-span-5 flex justify-center">
-              <div className="w-[300px] h-[550px] border-[2px] border-neutral-800 bg-[#FAF9F6] p-4 relative flex flex-col shadow-[8px_8px_0px_0px_#e5e5e5]">
-                {/* Mock status indicator */}
-                <div className="flex justify-between items-center text-[9px] font-bold tracking-wider uppercase text-neutral-400 border-b border-neutral-200 pb-2 mb-6">
-                  <span>Client v1.2</span>
-                  <span className="text-[oklch(0.55_0.14_245)] flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.55_0.14_245)]" />
-                    GPS ACTIVE
-                  </span>
-                </div>
-
-                {activeMode === "voice" ? (
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <span className="text-[9px] font-bold text-[oklch(0.55_0.14_245)] uppercase tracking-wider">
-                        Passenger Reporting Mode
-                      </span>
-                      <h3 className="text-base font-bold leading-tight">
-                        Tap record & describe issue
-                      </h3>
-                      <p className="text-[11px] text-neutral-500 leading-relaxed">
-                        Automatic voice processing tags coordinates and routes instantly.
-                      </p>
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-center items-center py-6">
-                      {voiceStep === 1 ? (
-                        <div className="flex gap-1 items-center h-8 mb-6">
-                          {[...Array(6)].map((_, i) => (
-                            <motion.div
-                              key={i}
-                              animate={{ height: [8, 28, 8] }}
-                              transition={{
-                                duration: 0.8,
-                                repeat: Infinity,
-                                delay: i * 0.1,
-                              }}
-                              className="w-1 bg-[oklch(0.55_0.14_245)]"
-                            />
-                          ))}
-                        </div>
-                      ) : voiceStep === 2 ? (
-                        <div className="w-full p-3 border border-neutral-200 bg-white text-[10px] mb-6 space-y-1">
-                          <span className="font-bold text-[oklch(0.62_0.14_140)] block">✓ TRANSCRIBED TEXT:</span>
-                          <p className="text-neutral-600 italic">"{voiceText}"</p>
-                        </div>
-                      ) : (
-                        <div className="h-12 flex items-center justify-center text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
-                          Ready to transcribe
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => {
-                          if (voiceStep === 2) {
-                            handleResetVoice();
-                          } else {
-                            setIsRecording(true);
-                          }
-                        }}
-                        disabled={isRecording}
-                        className={`w-16 h-16 border-2 border-neutral-800 flex items-center justify-center transition-all ${
-                          isRecording
-                            ? "bg-red-500 text-white"
-                            : voiceStep === 2
-                            ? "bg-[oklch(0.62_0.14_140)] text-white"
-                            : "bg-white text-neutral-800 hover:bg-neutral-50"
-                        } shadow-[4px_4px_0px_0px_#1e293b] active:translate-y-0.5 active:shadow-[2px_2px_0px_0px_#1e293b]`}
-                      >
-                        {voiceStep === 2 ? (
-                          <CheckCircle className="w-6 h-6" />
-                        ) : (
-                          <Mic className="w-6 h-6" />
-                        )}
-                      </button>
-                    </div>
-
-                    <div className="border-t border-neutral-200 pt-3 text-[9px] font-mono text-neutral-400 space-y-0.5">
-                      <div>LAT: {BASE_LAT.toFixed(4)}</div>
-                      <div>LNG: {BASE_LNG.toFixed(4)}</div>
-                    </div>
+            {/* Magnetic Mockup Element */}
+            <motion.div style={{ rotateY: phoneRotateY, rotateX: phoneRotateX, y: phoneY }} className="z-10">
+              <Magnet strength={5}>
+                {/* Silver Bezel iPhone container */}
+                <div className="relative w-[320px] h-[650px] bg-[#EAEAEA] rounded-[48px] p-2.5 shadow-2xl border-4 border-[#CCCCCC] overflow-hidden">
+                  
+                  {/* Dynamic Island Notch */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5.5 bg-black rounded-full z-20 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-zinc-900 rounded-full ml-auto mr-4" />
                   </div>
-                ) : (
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <span className="text-[9px] font-bold text-[oklch(0.55_0.14_245)] uppercase tracking-wider">
-                        Pedestrian Walkway Mode
-                      </span>
-                      <h3 className="text-base font-bold leading-tight">
-                        Accessibility & Sidewalk reports
-                      </h3>
+
+                  {/* Internal Screen Content */}
+                  <div className="w-full h-full bg-white rounded-[40px] overflow-hidden flex flex-col pt-8 px-4 pb-4">
+                    
+                    {/* Simulated App Header */}
+                    <div className="flex items-center justify-between border-b border-whisper-border pb-3 mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-brunswick flex items-center justify-center text-white text-xs font-serif font-bold">S</div>
+                        <span className="text-xs font-bold tracking-tight">StreetSync</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] bg-mint-highlight text-brunswick font-mono px-2 py-0.5 rounded-full font-semibold">
+                        <span className="w-1.5 h-1.5 bg-brunswick rounded-full animate-pulse" />
+                        PILOT ACTIVE
+                      </div>
                     </div>
 
-                    <div className="flex-1 my-4 border border-neutral-200 bg-white relative flex items-center justify-center">
-                      <div className="absolute inset-3 border border-dashed border-neutral-200 pointer-events-none" />
-                      <div className="text-center p-4">
-                        <Accessibility className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-500 block">
-                          Malfunctioning Curb Ramp
+                    {/* Voice reporting UI */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="space-y-4">
+                        <span className="text-[10px] font-bold tracking-wider text-muted-pine uppercase font-mono block">Voice Reporter</span>
+                        
+                        <div className="bg-[#F4F7E6]/40 border border-whisper-border p-4 rounded-2xl space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-pine">Live Telemetry</span>
+                            <div className="flex items-center gap-1 text-[10px] text-brunswick font-mono">
+                              <MapPin className="w-3 h-3" />
+                              <span>42.3519° N, 71.0645° W</span>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-canvas border border-whisper-border p-3 rounded-xl min-h-[90px] flex items-center justify-center">
+                            <p className="text-xs text-charcoal font-medium leading-relaxed italic text-center">
+                              "Malfunctioning pedestrian signal at Tremont St and Boylston St. The crosswalk signal is dark and not changing..."
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Active Visualizer Waveform */}
+                      <div className="py-6 flex flex-col items-center gap-4">
+                        <div className="flex items-end justify-center gap-1.5 h-12 w-full px-8">
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-1" />
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-2" />
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-3" />
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-4" />
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-5" />
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-6" />
+                          <span className="w-1 bg-brunswick rounded-full animate-wave-7" />
+                        </div>
+
+                        <button
+                          role="button"
+                          aria-label="Simulate audio recording trigger"
+                          className="w-16 h-16 rounded-full bg-brunswick flex items-center justify-center text-white shadow-lg hover:scale-105 transition-custom cursor-pointer active:scale-95 outline-none focus:ring-2 focus:ring-brunswick/50"
+                        >
+                          <Mic className="w-7 h-7" />
+                        </button>
+                        
+                        <span className="text-xs font-medium text-brunswick animate-pulse">Listening & Transcribing...</span>
+                      </div>
+
+                      {/* Emergency Services Disclaimer inside App */}
+                      <div className="bg-red-50 border border-red-100 p-2.5 rounded-xl flex gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <span className="text-[9px] text-red-700 font-medium leading-tight">
+                          This app does not connect to 911 or emergency services.
                         </span>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="border border-neutral-200 bg-white px-3 py-2 text-[9px] font-bold text-orange-700 flex justify-between">
-                        <span>♿ ADA PRIORITIZED</span>
-                        <span>ACTIVE</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Explanation Column */}
-            <div className="md:col-span-7 space-y-8">
-              {activeMode === "voice" ? (
-                <div className="space-y-6">
-                  <h3 className="font-display font-bold text-2xl tracking-tight text-[oklch(0.20_0.01_240)]">
-                    Mode 1: Voice-Activated Routing
-                  </h3>
-                  <p className="text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-                    Designed for passengers and commuters, StreetSync leverages a clean voice trigger to capture details instantly. Using a localized speech-to-text API, spoken descriptions are parsed into structured report entries and tagged with live telemetry coords in milliseconds.
-                  </p>
-                  
-                  <div className="space-y-4 pt-2">
-                    <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">01</span>
-                      <div className="space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wider">Speech-to-Text Processing</span>
-                        <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Converts verbal reports directly to dispatch text entries.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">02</span>
-                      <div className="space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wider">Instant Background Telemetry</span>
-                        <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Automatically registers GPS coordinates and time signatures.</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <h3 className="font-display font-bold text-2xl tracking-tight text-[oklch(0.20_0.01_240)]">
-                    Mode 2: Community Walking Mode
-                  </h3>
-                  <p className="text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-                    Pedestrians and advocates can document hazards like blocked accessibility ramps or environmental issues. Using streamlined classification models, reports are automatically binned into city triage categories.
-                  </p>
-
-                  <div className="space-y-4 pt-2">
-                    <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">01</span>
-                      <div className="space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wider">ADA Accessibility Priority</span>
-                        <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Flags blockages on wheelchair ramps or crosswalk signals for immediate city resolution.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <span className="text-xs font-mono font-bold text-[oklch(0.55_0.14_245)]">02</span>
-                      <div className="space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wider">Visual Verification Capture</span>
-                        <p className="text-xs text-[oklch(0.45_0.01_240)] leading-relaxed">Leverages image analysis classification to expedite ticket routing.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </Magnet>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Triage & Pipeline Section */}
-      <section className="py-20 max-w-7xl mx-auto px-8 space-y-24">
-        {/* Proximity Deduplication */}
+      {/* Case Study / Real-World Validation (Scroll-Driven Character Opacity Reveal) */}
+      <section id="impact" className="py-24 bg-mint-highlight/20 border-y border-whisper-border px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <div className="lg:col-span-8 space-y-6">
+              <span className="font-serif text-5xl font-light text-brunswick/40 italic block">BOS:311 Analysis</span>
+              <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-charcoal">
+                Friction is the single biggest barrier to municipal engagement.
+              </h2>
+              
+              {/* Scroll-driven typography reveal */}
+              <AnimatedText text="Real-world data from civic systems (like Boston's BOS:311) proves that residents want to improve their communities, but clunky websites and telephone queues prevent it. By offering an accessible mobile interface, app-based reports in Boston skyrocketed from 6% to nearly 30% of all city service requests. Voice-activated reporting solves this effort barrier." />
+              
+              <div className="pt-4 flex flex-wrap gap-8">
+                <div className="space-y-1">
+                  <span className="text-3xl font-serif font-bold text-brunswick">5x Growth</span>
+                  <p className="text-xs text-muted-pine font-medium uppercase font-mono tracking-wider">In app reporting rates</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-3xl font-serif font-bold text-brunswick">Under 10s</span>
+                  <p className="text-xs text-muted-pine font-medium uppercase font-mono tracking-wider">Report submission time</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-3xl font-serif font-bold text-brunswick">15-Meter</span>
+                  <p className="text-xs text-muted-pine font-medium uppercase font-mono tracking-wider">Deduplication threshold</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 bg-white border border-whisper-border p-8 rounded-3xl shadow-sm space-y-6">
+              <span className="text-xs font-mono font-bold text-brunswick tracking-wider uppercase">Why Voice Automation?</span>
+              <ul className="space-y-4">
+                <li className="flex gap-3">
+                  <div className="w-5 h-5 rounded-full bg-mint-highlight flex items-center justify-center shrink-0 text-brunswick">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-sm font-semibold text-charcoal">No clunky keyboards or portals</span>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-5 h-5 rounded-full bg-mint-highlight flex items-center justify-center shrink-0 text-brunswick">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-sm font-semibold text-charcoal">Allows passengers to report safely</span>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-5 h-5 rounded-full bg-mint-highlight flex items-center justify-center shrink-0 text-brunswick">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-sm font-semibold text-charcoal">Automatic location pinning</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Two Modes / Workflows - Custom Asymmetric Layout */}
+      <section id="residents" className="py-32 px-6 max-w-7xl mx-auto border-t border-whisper-border">
+        <div className="max-w-3xl mb-24">
+          <h2 className="font-serif text-4xl md:text-6xl font-bold tracking-tight leading-none text-charcoal">
+            Choose the mode that fits your context
+          </h2>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-          <div className="lg:col-span-6 space-y-6">
-            <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              Backend Clustering
-            </div>
-            <h2 className="font-display font-bold text-3xl md:text-4xl tracking-tight">
-              Proximity-Based Deduplication
-            </h2>
-            <p className="text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-              Legacies receive dozens of identical tickets for a single road hazard, overwhelming municipal databases. StreetSync processes coordinates via a geospatial radius check. Any new entry within a **15-meter radius** automatically clusters into the master ticket.
-            </p>
-
-            <div className="p-4 border border-neutral-200 bg-white text-xs font-medium space-y-1">
-              <span className="font-bold text-[oklch(0.55_0.14_245)]">Interactive Sandbox</span>
-              <p>Click on the grid to drop a pin. Placing pins close to one another clusters them into a single report, increasing the ticket priority multiplier.</p>
-            </div>
-          </div>
-
-          <div className="lg:col-span-6 space-y-4">
-            <div className="border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
-              <div className="flex justify-between items-center text-[10px] font-bold uppercase text-neutral-400 tracking-wider">
-                <span>Deduplication Map View</span>
-                <span>Radius: 15m</span>
-              </div>
-
-              {/* Map grid mockup */}
-              <div 
-                className="w-full h-44 bg-neutral-50 border border-neutral-200 relative overflow-hidden cursor-crosshair"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = (e.clientX - rect.left) / rect.width - 0.5;
-                  const y = (e.clientY - rect.top) / rect.height - 0.5;
-                  handleAddGridReport(y * 0.001, x * 0.001);
-                }}
-              >
-                {gridReports.map((r) => (
-                  <div
-                    key={r.id}
-                    className="absolute"
-                    style={{
-                      left: `calc(50% + ${(r.lng - BASE_LNG) * 1000 * 50}px)`,
-                      top: `calc(50% + ${(r.lat - BASE_LAT) * 1000 * 50}px)`,
-                    }}
-                  >
-                    <div className="relative -left-2.5 -top-2.5">
-                      <div className="absolute w-8 h-8 -left-1.5 -top-1.5 rounded-full bg-[oklch(0.55_0.14_245)]/10 animate-ping" />
-                      <div className="w-5 h-5 bg-[oklch(0.55_0.14_245)] text-white flex items-center justify-center text-[9px] font-bold border border-white">
-                        {r.duplicates > 0 ? `+${r.duplicates}` : "📍"}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <AnimatePresence>
-                {duplicateMessage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="p-3 border border-orange-200 bg-orange-50 text-orange-800 text-[10px] font-bold"
-                  >
-                    {duplicateMessage}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="space-y-2">
-                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Master Logs</span>
-                <div className="space-y-1 max-h-28 overflow-y-auto">
-                  {gridReports.map((r) => (
-                    <div key={r.id} className="flex justify-between items-center text-[10px] p-2 bg-neutral-50 border border-neutral-200 font-mono">
-                      <span>ID-{r.id} | {r.category}</span>
-                      <span className="font-bold text-[oklch(0.55_0.14_245)]">{r.duplicates + 1} CONFIRMATIONS</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Severity scoring and trust scores */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <div className="border border-neutral-200 bg-white p-8 space-y-6">
-            <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              Priority Triage
-            </div>
-            <h3 className="font-display font-bold text-2xl">
-              Urgency & Severity Score Matrix
-            </h3>
-            <p className="text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-              Each report is dynamically scored based on parameters including ADA accessibility constraints, duplicates confirmed, and location criticality.
-            </p>
-
-            <div className="space-y-3 pt-2">
-              <div className="p-4 border border-neutral-200 bg-neutral-50 flex justify-between items-center">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-red-600 tracking-wider">Critical</span>
-                  <span className="text-xs font-bold block">Blocked Wheelchair Ramp (ADA)</span>
-                </div>
-                <span className="font-mono text-xs font-bold">Priority Score: 98</span>
-              </div>
-
-              <div className="p-4 border border-neutral-200 bg-neutral-50 flex justify-between items-center">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-orange-600 tracking-wider">High</span>
-                  <span className="text-xs font-bold block">Commuter Arterial Traffic Outage</span>
-                </div>
-                <span className="font-mono text-xs font-bold">Priority Score: 82</span>
-              </div>
-
-              <div className="p-4 border border-neutral-200 bg-neutral-50 flex justify-between items-center">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">Low</span>
-                  <span className="text-xs font-bold block">Aesthetic Graffiti Compliant</span>
-                </div>
-                <span className="font-mono text-xs font-bold">Priority Score: 24</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="border border-neutral-200 bg-white p-8 space-y-6 flex flex-col justify-between">
+          
+          {/* Mode 1: Voice Activated (Left Column - Spans 5) */}
+          <div className="lg:col-span-5 space-y-8 group">
             <div className="space-y-4">
-              <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-                Anti-Spam Filtering
-              </div>
-              <h3 className="font-display font-bold text-2xl">
-                Reporter Trust Scores
+              <div className="font-serif text-5xl font-light text-brunswick/40 italic">01</div>
+              <h3 className="text-3xl font-serif font-bold text-charcoal leading-tight">
+                Voice-Activated Reporting
               </h3>
-              <p className="text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-                Calculates trust multipliers based on verification rates and confirmations. High-trust user reports bypass administrative holds.
+              <p className="text-muted-pine text-base leading-relaxed">
+                Designed for commuters, transit passengers, or stationary observers. Minimizes cognitive load with native voice activation and a large tap-to-record interface. It automatically gathers background GPS coordinates and structures spoken reports using speech-to-text API processing.
               </p>
-
-              <div className="space-y-3 p-4 border border-neutral-200 bg-neutral-50">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold">Trust Multiplier Weight</span>
-                  <span className="font-mono font-bold text-[oklch(0.55_0.14_245)]">{reporterTrust}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={reporterTrust}
-                  onChange={(e) => setReporterTrust(parseInt(e.target.value))}
-                  className="w-full accent-[oklch(0.55_0.14_245)] cursor-pointer"
-                />
-              </div>
             </div>
-
-            <div className="space-y-2 pt-4">
-              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block">Audit History</span>
-              {verificationHistory.map((item, index) => (
-                <div key={index} className="flex justify-between items-center text-[10px] font-mono">
-                  <span className="text-neutral-500">{item.task} ({item.impact})</span>
-                  <span className={`font-bold ${item.change.startsWith("+") ? "text-[oklch(0.62_0.14_140)]" : "text-red-600"}`}>
-                    {item.change}
-                  </span>
-                </div>
-              ))}
+            
+            {/* Visual Telemetry Demo block */}
+            <div className="bg-white border border-whisper-border p-6 rounded-2xl space-y-4 shadow-sm hover:shadow-md transition-custom">
+              <div className="flex justify-between items-center text-xs font-mono text-muted-pine">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                  Live Audio Capture
+                </span>
+                <span>Active Telemetry</span>
+              </div>
+              <div className="h-1 bg-canvas rounded-full overflow-hidden">
+                <div className="h-full bg-brunswick w-1/3 rounded-full animate-pulse" />
+              </div>
+              <p className="text-xs font-mono text-charcoal bg-canvas p-3 rounded-lg leading-relaxed">
+                TRANSCRIPTION: "Pothole detected on right lane of Huntington Ave near..."
+              </p>
             </div>
           </div>
+
+          {/* Mode 2: Community Walking Mode (Right Column - Spans 7 - Offset downwards) */}
+          <div className="lg:col-span-7 space-y-8 lg:pt-24 group">
+            <div className="space-y-4">
+              <div className="font-serif text-5xl font-light text-brunswick/40 italic">02</div>
+              <h3 className="text-3xl font-serif font-bold text-charcoal leading-tight">
+                Community Walking Mode
+              </h3>
+              <p className="text-muted-pine text-base leading-relaxed">
+                For pedestrians and neighborhood advocates tracking accessibility (ADA) and environmental concerns. Residents easily take photos of physical hazards, identify mobility barriers, and route the visual evidence directly through visual processing algorithms.
+              </p>
+            </div>
+
+            {/* Visual Photo Upload Demo block */}
+            <div className="bg-mint-highlight/20 border border-brunswick/10 p-8 rounded-3xl flex flex-col md:flex-row gap-6 items-center shadow-sm">
+              <div className="w-full md:w-48 aspect-video md:aspect-square bg-white border border-whisper-border rounded-2xl flex items-center justify-center text-muted-pine shrink-0 relative overflow-hidden">
+                {/* Camera Viewfinder HUD Overlay */}
+                <div className="absolute inset-3 border border-brunswick/5 rounded-lg overflow-hidden pointer-events-none">
+                  {/* Corners */}
+                  <div className="absolute top-2 left-2 w-2.5 h-2.5 border-t border-l border-brunswick/40" />
+                  <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-brunswick/40" />
+                  <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-brunswick/40" />
+                  <div className="absolute bottom-2 right-2 w-2.5 h-2.5 border-b border-r border-brunswick/40" />
+                  
+                  {/* Reticle */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 border border-brunswick/20 rounded-full flex items-center justify-center">
+                    <div className="w-1 h-1 bg-brunswick/40 rounded-full" />
+                  </div>
+                  
+                  {/* Grid Lines */}
+                  <div className="absolute inset-0 flex justify-between px-[33%] pointer-events-none opacity-5">
+                    <div className="w-px h-full bg-charcoal" />
+                    <div className="w-px h-full bg-charcoal" />
+                  </div>
+                  <div className="absolute inset-0 flex flex-col justify-between py-[33%] pointer-events-none opacity-5">
+                    <div className="w-full h-px bg-charcoal" />
+                    <div className="w-full h-px bg-charcoal" />
+                  </div>
+
+                  {/* Camera Telemetry */}
+                  <span className="absolute bottom-2 left-2.5 text-[8px] font-mono text-brunswick/50 tracking-wider">EV +0.0</span>
+                  <span className="absolute bottom-2 right-2.5 text-[8px] font-mono text-brunswick/50 tracking-wider">ISO 64</span>
+                </div>
+                <div className="w-full h-full bg-[radial-gradient(rgba(27,77,62,0.1)_1.5px,transparent_1.5px)] [background-size:16px_16px] flex items-center justify-center">
+                  <span className="text-[9px] font-mono tracking-widest uppercase text-muted-pine/60 z-10 bg-white px-2.5 py-1 rounded border border-whisper-border">CAMERA READY</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="inline-flex text-[10px] font-bold font-mono tracking-widest bg-brunswick text-white px-2 py-0.5 rounded uppercase">
+                  ADA Barrier Detected
+                </div>
+                <h4 className="text-sm font-bold text-charcoal">Broken curb ramp at 42.3486° N</h4>
+                <p className="text-xs text-muted-pine leading-relaxed">
+                  Visual analysis tags matching: Curb damage, Mobility hazard, Public Works. Priority elevated.
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* Municipal Admin Section */}
-      <section className="py-20 bg-white border-t border-neutral-200">
-        <div className="max-w-7xl mx-auto px-8 space-y-12">
-          <div className="space-y-4 max-w-xl">
-            <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              Control Center
-            </div>
-            <h2 className="font-display font-bold text-3xl">
-              Automated Dispatch Dashboard
+      {/* Government Pipeline Section - Interactive Sticky-Stacking Cards */}
+      <section id="pipeline" ref={pipelineContainerRef} className="relative py-32 bg-charcoal text-white px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          {/* Left Column (Sticky Heading - Vertically Centered in Viewport) */}
+          <div className="lg:col-span-5 flex flex-col justify-center space-y-6 lg:sticky lg:top-0 lg:h-screen">
+            <h2 className="font-serif text-4xl md:text-6xl font-bold tracking-tight leading-none">
+              Backend Municipal Intelligence
             </h2>
-            <p className="text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-              Provides municipal work crews with a centralized hub, prioritizing incoming clustered tickets and streamlining city resource management.
+            <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
+              StreetSync formats citizen submissions into prioritized, high-signal actionable items for municipalities.
+            </p>
+            <div className="pt-6">
+              <a
+                href="#pilot"
+                className="inline-flex items-center gap-2 bg-mint-highlight text-brunswick px-6 py-3 rounded-xl text-sm font-semibold hover:bg-mint-highlight/90 transition-custom w-fit"
+              >
+                Join Municipal Pilot
+                <ChevronRight className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+
+          {/* Right Column (Sticky Stacking Cards Deck) */}
+          <div className="lg:col-span-7 relative pb-[10vh]">
+            {pipelineSteps.map((step, idx) => (
+              <StackingCard
+                key={step.id}
+                id={step.id}
+                title={step.title}
+                desc={step.desc}
+                index={idx}
+                progress={pipelineScroll}
+                total={pipelineSteps.length}
+              />
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* Request Pilot Form Section */}
+      <section id="pilot" className="py-28 px-6 bg-canvas flex justify-center">
+        <div className="max-w-3xl w-full text-center space-y-10">
+          <div className="space-y-4">
+            <span className="text-xs font-mono font-bold text-brunswick tracking-wider uppercase block">Get Started</span>
+            <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-charcoal">
+              Empower your community with StreetSync
+            </h2>
+            <p className="text-muted-pine text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+              Ready to reduce barriers to civic engagement in your pilot city? Join our pilot municipal program to receive a dedicated dashboard and inbox routing.
             </p>
           </div>
 
-          {/* Table Redesigned - Clean borders, raw typography, no rounded grids */}
-          <div className="border border-neutral-200 bg-white">
-            <div className="px-6 py-4 border-b border-neutral-200 bg-[#FAF9F6] flex flex-wrap justify-between items-center gap-4">
-              <span className="text-xs font-bold uppercase tracking-wider">Boston Active Triage Logs</span>
-              <div className="flex border border-neutral-200">
-                {["All", "Critical", "Resolved"].map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setActiveFilter(f as any)}
-                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors border-r border-neutral-200 last:border-0 ${
-                      activeFilter === f
-                        ? "bg-[oklch(0.55_0.14_245)] text-white"
-                        : "bg-white text-neutral-600 hover:text-[oklch(0.20_0.01_240)]"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-400 font-bold uppercase tracking-wider">
-                    <th className="px-6 py-3">Category</th>
-                    <th className="px-6 py-3">Description</th>
-                    <th className="px-6 py-3 text-center">Clustered Reports</th>
-                    <th className="px-6 py-3 text-center">Urgency</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200">
-                  {municipalReports
-                    .filter((r) => {
-                      if (activeFilter === "Critical") return r.severity === "Critical";
-                      if (activeFilter === "Resolved") return r.status === "Resolved";
-                      return true;
-                    })
-                    .map((r) => (
-                      <tr key={r.id} className="hover:bg-neutral-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold">
-                          {r.ada && <span className="mr-1">♿</span>}
-                          {r.category}
-                        </td>
-                        <td className="px-6 py-4 text-neutral-600">{r.desc}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="px-2 py-0.5 border border-neutral-200 text-[9px] font-mono">
-                            {r.duplicates} grouped
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`px-2 py-0.5 text-[9px] font-bold uppercase border ${
-                              r.severity === "Critical"
-                                ? "border-red-300 bg-red-50 text-red-700"
-                                : r.severity === "High"
-                                ? "border-orange-300 bg-orange-50 text-orange-700"
-                                : "border-blue-300 bg-blue-50 text-blue-700"
-                            }`}
-                          >
-                            {r.severity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-bold">
-                          <span
-                            className={`${
-                              r.status === "Resolved"
-                                ? "text-[oklch(0.62_0.14_140)]"
-                                : r.status === "Dispatched"
-                                ? "text-blue-600"
-                                : "text-orange-600"
-                            }`}
-                          >
-                            {r.status.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {r.status !== "Resolved" ? (
-                            <button
-                              onClick={() => handleResolveTicket(r.id)}
-                              className="px-3 py-1 border border-neutral-800 text-[10px] font-bold uppercase hover:bg-neutral-50 transition-colors"
-                            >
-                              Resolve
-                            </button>
-                          ) : (
-                            <span className="text-neutral-400 font-bold uppercase tracking-wider">Archived</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRD & Authors */}
-      <section id="prd" className="py-20 max-w-7xl mx-auto px-8 border-t border-neutral-200">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          <div className="lg:col-span-8 space-y-8">
-            <div className="text-xs font-bold uppercase tracking-widest text-[oklch(0.55_0.14_245)]">
-              PRD Outline
-            </div>
-            <h2 className="font-display font-bold text-3xl">
-              MVP Functional Requirements
-            </h2>
-
-            <div className="space-y-6 text-sm text-[oklch(0.45_0.01_240)] leading-relaxed">
-              <div className="space-y-1">
-                <h4 className="font-bold text-[oklch(0.20_0.01_240)]">1. Voice-Activated Reporting (Hands-Free/Passenger)</h4>
-                <p>Simplified voice triggers or large single-tap interfaces minimize passenger interaction time. Integrated speech-to-text API transcribes issues, automatically appending location telemetry.</p>
-              </div>
-
-              <div className="space-y-1">
-                <h4 className="font-bold text-[oklch(0.20_0.01_240)]">2. Community Mode (Stationary/Pedestrian)</h4>
-                <p>Enables photo capture and image classification matching city database tags. Provides targeted ADA categories (broken sidewalks, blocked access points) with emergency-bypassing priority routes.</p>
-              </div>
-
-              <div className="space-y-1">
-                <h4 className="font-bold text-[oklch(0.20_0.01_240)]">3. Backend Logic Pipeline</h4>
-                <p>Consolidates tickets within 15 meters. Manages reporter reliability scoring metrics based on confirmation accuracy. Formats structured notifications to simulated municipal inboxes.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-4 border border-neutral-200 bg-white p-8 space-y-6 shadow-sm">
-            <span className="text-[10px] font-bold text-[oklch(0.55_0.14_245)] uppercase tracking-wider block">
-              CAC Submission Details
-            </span>
-
-            <div className="space-y-4 text-xs font-medium">
-              <div>
-                <span className="text-[10px] text-neutral-400 block font-bold uppercase tracking-wider">Project ID</span>
-                <span className="font-bold text-sm">StreetSync MVP</span>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-neutral-400 block font-bold uppercase tracking-wider">Event target</span>
-                <span className="font-bold text-sm">2026 Congressional App Challenge</span>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-neutral-400 block font-bold uppercase tracking-wider">Authors</span>
-                <div className="space-y-1 mt-2 font-mono font-bold text-neutral-800">
-                  <div>Aarav Garg</div>
-                  <div>Krish Sinha</div>
-                  <div>Rithvik Penmetsa</div>
+          <div className="bg-white border border-whisper-border p-8 md:p-10 rounded-[32px] shadow-sm text-left">
+            {!formSubmitted ? (
+              <form onSubmit={handleFormSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-xs font-bold text-muted-pine tracking-wider uppercase font-mono">
+                    Municipality Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="e.g. administrator@boston.gov"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    className="w-full bg-canvas border border-whisper-border p-4 rounded-xl text-charcoal text-sm outline-none focus:border-brunswick transition-custom"
+                  />
+                  {formError && (
+                    <p className="text-xs font-semibold text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {formError}
+                    </p>
+                  )}
                 </div>
+                
+                <button
+                  type="submit"
+                  className="w-full bg-brunswick text-white py-4 rounded-xl font-semibold hover:bg-brunswick/95 transition-custom hover-lift hover-sink"
+                >
+                  Request Pilot Access
+                </button>
+              </form>
+            ) : (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-mint-highlight flex items-center justify-center text-brunswick mx-auto">
+                  <Check className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-serif font-bold text-charcoal">Request Submitted</h3>
+                <p className="text-sm text-muted-pine max-w-sm mx-auto">
+                  Thank you! We've received your pilot request for <strong>{emailInput}</strong>. Our team will reach out with dashboard access credentials.
+                </p>
               </div>
-            </div>
-
-            <div className="pt-6 border-t border-neutral-200 text-[10px] text-neutral-400 leading-relaxed">
-              ⚠️ <strong>Emergency Notice:</strong> StreetSync is intended solely for non-emergency public works reporting. It does not connect to 911 or emergency services.
-            </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-200 bg-white py-8">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
-          <span>&copy; {new Date().getFullYear()} StreetSync. All rights reserved.</span>
-          <span className="flex items-center gap-1">
-            <Mail className="w-3 h-3 text-[oklch(0.55_0.14_245)]" /> pilot-inbox@streetsync.gov
-          </span>
+      {/* Footer & Emergency Services Disclaimer */}
+      <footer id="download" className="bg-canvas border-t border-whisper-border/50 py-16 px-6">
+        <div className="max-w-7xl mx-auto space-y-12">
+          
+          {/* Main Footer Row */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 pb-12 border-b border-whisper-border/40">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-brunswick flex items-center justify-center text-white font-serif text-sm font-bold">S</div>
+                <span className="font-serif text-lg font-bold">StreetSync</span>
+              </div>
+              <p className="text-xs text-muted-pine">
+                2026 Congressional App Challenge entry. Built for neighborhood advocates and municipal administrators.
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-4">
+              <button className="bg-charcoal text-white inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-semibold hover:bg-zinc-800 transition-custom hover-lift hover-sink">
+                Download for iOS
+                <ArrowUpRight className="w-4 h-4 opacity-60" />
+              </button>
+              <button className="border border-whisper-border bg-white text-charcoal inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-semibold hover:bg-canvas transition-custom hover-lift hover-sink">
+                Download for Android
+                <ArrowUpRight className="w-4 h-4 opacity-60" />
+              </button>
+            </div>
+          </div>
+
+          {/* Legal / ADA / Non-Emergency Disclaimer */}
+          <div className="p-6 bg-red-50/60 border border-red-100 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100/80 flex items-center justify-center text-red-700 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-red-800 uppercase font-mono tracking-wider">Emergency Services Disclaimer</span>
+                <p className="text-xs font-semibold text-red-700 leading-normal max-w-3xl">
+                  StreetSync is strictly intended for non-emergency public works reporting. This application does not connect to 911, dispatch emergency services, or resolve life-threatening crises.
+                </p>
+              </div>
+            </div>
+            
+            <span className="text-[10px] font-bold text-red-800/60 font-mono shrink-0 select-none border border-red-200/50 px-3 py-1.5 rounded-lg bg-red-100/30 uppercase">
+              Non-Emergency Only
+            </span>
+          </div>
+
+          {/* Copyright */}
+          <div className="flex flex-col md:flex-row justify-between items-center text-xs text-muted-pine gap-4 pt-2">
+            <span>© 2026 StreetSync. Developed by Aarav Garg, Krish Sinha, and Rithvik Penmetsa.</span>
+            <div className="flex gap-6">
+              <a href="#" className="hover:underline">Privacy Policy</a>
+              <a href="#" className="hover:underline">Terms of Service</a>
+            </div>
+          </div>
+
         </div>
       </footer>
     </div>

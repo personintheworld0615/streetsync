@@ -135,3 +135,5 @@ Use `.agent/prompts/gallery/` to find 93+ proven prompts for image and video gen
 5. Code must be substantial (aim for 3,000+ lines for full sites) to ensure a "production-ready" feel.
 6. Reference `.agent/design-systems/` for "Big Tech" aesthetic accuracy.
 7. Use `/impeccable critique` to self-evaluate before presenting to the user.
+8. Never run `npm run build` after it has succeeded once; repeated production builds can break or disrupt active local development servers.
+
