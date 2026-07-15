@@ -1,19 +1,33 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond } from "next/font/google";
+import { JetBrains_Mono, Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   style: ["normal", "italic"],
+  display: "swap",
+});
+
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "StreetSync — Frictionless Civic Reporting",
   description:
-    "Simplifying communication between residents and municipal governments with voice activation, auto-telemetry, and intelligent deduplication.",
+    "Report infrastructure and accessibility issues with voice, GPS, and photos. StreetSync deduplicates, prioritizes, and routes high-signal reports to municipal teams.",
 };
 
 export default function RootLayout({
@@ -22,8 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} antialiased`}>
-      <body className="bg-canvas text-charcoal selection:bg-mint-highlight selection:text-brunswick min-h-screen font-sans">
+    <html
+      lang="en"
+      className={`${sourceSerif.variable} ${manrope.variable} ${jetbrains.variable} antialiased`}
+    >
+      <body className="min-h-screen bg-canvas font-sans text-ink selection:bg-mint selection:text-brunswick">
         {children}
       </body>
     </html>

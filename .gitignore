@@ -35,3 +35,6 @@ next-env.d.ts
 # Agent Skills & Tooling Logs
 .agent/
 .impeccable/
+
+# Local Flutter app reference (not part of landing site)
+_reference/
